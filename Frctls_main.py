@@ -24,7 +24,9 @@ class Frctls:
         # self.master.bind('<Configure>', self.print_screen_size)
 
         #creates the main frame, wich is the parent of all ither widgets
-        self.main_frame = Frame(self.master, bg = 'blue')
+
+        self.main_frame = Frame(self.master, bg = 'white')
+
         self.main_frame.place(x = 0, y = 0, relwidth = 1.0, relheight = 1.0)
 
         #Creates the main drawing canvas, where the fractals are going to be rendered
