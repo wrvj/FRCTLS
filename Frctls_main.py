@@ -49,11 +49,11 @@ class Frctls:
         self.settings_buttons_frame = Frame(self.settings_frame, bg = 'blue')
         self.settings_buttons_frame.place(relx = 0.5, rely = 0.6, anchor = 'n', relwidth = 0.9, relheight = 0.38)
 
-        self.run_fractal_button = Button(self.settings_buttons_frame, text = 'FRCTL', bg = 'white')
-        self.run_fractal_button.grid(row = 0, column = 0, sticky = N)
+        self.run_fractal_button = Button(self.settings_buttons_frame, text = 'FRCTL', bg = 'white', width = 30)
+        self.run_fractal_button.grid(row = 0, column = 0)
 
         self.save_fractal_button = Button(self.settings_buttons_frame, text = 'Save Design', bg = 'white')
-        self.save_fractal_button.grid(row = 1, column = 0)
+        self.save_fractal_button.grid(row = 1, column = 0, sticky = E)
 
 
 
