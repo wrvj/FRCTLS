@@ -1,0 +1,3 @@
+# FRCTLS
+
+Simple fractal renderer
