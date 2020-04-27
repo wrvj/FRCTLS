@@ -43,8 +43,17 @@ class Frctls:
         self.settings_title = Label(self.settings_frame, text = 'Settings', bg = self.settings_frame_bg_color, fg = 'white', font = self.main_font_family)
         self.settings_title.place(relx = 0.5, rely = 0.05, anchor = 'n')
 
-        self.run_fractal_button = Button(self.settings_frame, text = 'FRCTL', bg = 'white')
-        self.run_fractal_button.place(relx = 0.5, rely = 0.80, anchor ='s')
+        #adding the action buttons (Execute fractal, save design, load design)
+
+        #First, we create a container to hold the buttons
+        self.settings_buttons_frame = Frame(self.settings_frame, bg = 'blue')
+        self.settings_buttons_frame.place(relx = 0.5, rely = 0.6, anchor = 'n', relwidth = 0.9, relheight = 0.38)
+
+        self.run_fractal_button = Button(self.settings_buttons_frame, text = 'FRCTL', bg = 'white')
+        self.run_fractal_button.grid(row = 0, column = 0, sticky = N)
+
+        self.save_fractal_button = Button(self.settings_buttons_frame, text = 'Save Design', bg = 'white')
+        self.save_fractal_button.grid(row = 1, column = 0)
 
 
 
