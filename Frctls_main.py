@@ -1,11 +1,16 @@
 from tkinter import *
+from tkinter import font as tkFont
 import copy
 from random import uniform
+import my_lsystem
 
 
 class Frctls:
 
     rules = []
+
+
+    # helvetica36 = tkFont.Font(family = 'Helvetica', size = 36, weight = 'bold')
 
 
     def __init__(self, master):
@@ -15,6 +20,9 @@ class Frctls:
         self.settings_frame_bg_color = '#0d0d0d'
         self.main_font_family = 'helvetica-bold'
         self.canvas_line_weight_scaler = 1.0
+        self.helv24 = tkFont.Font(family='Helvetica', size=24, weight='bold')
+        self.helv16 = tkFont.Font(family='Helvetica', size=16, weight='bold')
+        self.helv36 = tkFont.Font(family='Helvetica', size=36, weight='bold')
 
         #takes the tk root object and assigns it to a local variable
         self.master = master
@@ -40,24 +48,36 @@ class Frctls:
         self.settings_frame = Frame(self.main_frame, bg = self.settings_frame_bg_color)
         self.settings_frame.place(relx = 0.8, rely = 0.0, relwidth = 0.2, relheight = 1.0)
 
-        self.settings_title = Label(self.settings_frame, text = 'Settings', bg = self.settings_frame_bg_color, fg = 'white', font = self.main_font_family)
+        self.settings_title = Label(self.settings_frame, text = 'Settings', bg = self.settings_frame_bg_color, fg = 'white', font = self.helv24)
         self.settings_title.place(relx = 0.5, rely = 0.05, anchor = 'n')
 
         #adding the action buttons (Execute fractal, save design, load design)
 
         #First, we create a container to hold the buttons
-        self.settings_buttons_frame = Frame(self.settings_frame, bg = 'blue')
+        self.settings_buttons_frame = Frame(self.settings_frame, bg = self.settings_frame_bg_color)
         self.settings_buttons_frame.place(relx = 0.5, rely = 0.6, anchor = 'n', relwidth = 0.9, relheight = 0.38)
+        self.settings_buttons_frame.columnconfigure(0, weight=1)
 
-        self.run_fractal_button = Button(self.settings_buttons_frame, text = 'FRCTL', bg = 'white', width = 30)
-        self.run_fractal_button.grid(row = 0, column = 0)
+        #Then, the buttons
+        self.run_fractal_button = Button(self.settings_buttons_frame, text = 'FRCTL', bg = 'white', borderwidth = 0.0, font = self.helv24)
+        self.run_fractal_button.grid(row = 0, column = 0, sticky = EW)
 
-        self.save_fractal_button = Button(self.settings_buttons_frame, text = 'Save Design', bg = 'white')
-        self.save_fractal_button.grid(row = 1, column = 0, sticky = E)
+        #vertical spacing
+        self.settings_buttons_frame.grid_rowconfigure(1, minsize = 7)
+
+        self.save_fractal_button = Button(self.settings_buttons_frame, text = 'Save Design', bg = 'white', borderwidth = 0.0, font = self.helv16)
+        self.save_fractal_button.grid(row = 2, column = 0, sticky = EW)
+
+        #vertical spacing
+        self.settings_buttons_frame.grid_rowconfigure(3, minsize = 5)
+
+        self.load_fractal_button = Button(self.settings_buttons_frame, text = 'Load Design', bg = 'white', borderwidth = 0.0, font = self.helv16)
+        self.load_fractal_button.grid(row = 4, column = 0, sticky = EW)
 
 
 
 
+my_lsystem.createSentence("A", ["AABA", "BB"], 5)
 
 root = Tk()
 root.geometry ('{}x{}'.format(root.winfo_screenwidth(), root.winfo_screenheight()))
