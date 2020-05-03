@@ -3,14 +3,12 @@ from tkinter import font as tkFont
 import copy
 from random import uniform
 import my_lsystem
+from operator import add
 
 
 class Frctls:
 
     rules = []
-
-
-    # helvetica36 = tkFont.Font(family = 'Helvetica', size = 36, weight = 'bold')
 
 
     def __init__(self, master):
@@ -22,14 +20,15 @@ class Frctls:
 
         #create and set the configuration variables, as colours, fonts, etc.
 
+        #default settings
         self.weezer_axiom = "-FFF--F++F++++F----F--F++F++++FF++FFFFF----FF++++FF----FFFFF++FF++++F++F--F----F++++F++F--FFF++F++F----F++F"
 
         #creates the variables to handle the user user inputs
-        self.axiom_input_string = StringVar()
-        self.rules_input_string = ""
-        self.angle_input_string = StringVar()
-        self.random_input_string = StringVar()
-        self.iterations_input_string = StringVar()
+        self.axiom_input_string = StringVar(value ='F+F+F+F')
+        self.rules_input_string = "FF"
+        self.angle_input_string = StringVar(value = '90')
+        self.random_input_string = StringVar(value = '0')
+        self.iterations_input_string = StringVar(value ='1')
         self.lines = []
 
 
@@ -47,6 +46,8 @@ class Frctls:
         self.zoom_level = 1.0
         self.delta_pan = [0,0]
         self.fractal_position = [(self.master.winfo_width()*0.8)/2, self.master.winfo_height()/2]
+        self.fractal_angle = 0.0
+        self.last_cursor_angle = 0.0
         self.master.bind('<MouseWheel>', self.mouse_scroll_zoom)
 
         #creates the main frame, wich is the parent of all ither widgets
@@ -61,6 +62,9 @@ class Frctls:
         self.drawing_canvas.place(relx = 0.0, rely = 0.0, relwidth = 0.8, relheight = 1.0)
         self.drawing_canvas.bind('<B2-Motion>', self.mouse_pan)
         self.drawing_canvas.bind('<Button-2>', self.set_pan_delta)
+        self.drawing_canvas.bind('<B3-Motion>', self.mouse_rotation)
+        self.drawing_canvas.bind('<Button-3>', self.set_cursor_angle)
+        Canvas.create_circle = my_lsystem.create_circle
 
         #Creates the settings frame
         self.settings_frame = Frame(self.main_frame, bg = self.settings_frame_bg_color)
@@ -90,6 +94,7 @@ class Frctls:
         self.rules_input_label = Label (self.user_inputs_frame, text = 'Rules:',bg = self.settings_frame_bg_color, fg = 'white', font = self.helv16)
         self.rules_input_label.grid(row = 2, column = 0, sticky = EW)
         self.rules_input = Text(self.user_inputs_frame, bg = self.user_input_bg_color, fg = 'white', font = self.helv16, height = 7)
+        self.rules_input.insert(END, self.rules_input_string)
         self.rules_input.grid(row = 3, column = 0, columnspan = 2, sticky = EW)
 
         #adds the angle input inside the user input frame
@@ -139,42 +144,79 @@ class Frctls:
         self.load_fractal_button = Button(self.settings_buttons_frame, text = 'Load Design', bg = 'white', borderwidth = 0.0, font = self.helv16)
         self.load_fractal_button.grid(row = 4, column = 0, sticky = EW)
 
+
     #Handles the UPDATE Fractal button pressed
     def update_fractal(self):
 
         #create the sentence based on the iterations, rules and axiom given by the user
+
         sentence = my_lsystem.create_sentence(self.axiom_input_string.get().upper(), my_lsystem.format_rules(self.rules_input.get("1.0",'end-1c')), int(self.iterations_input_string.get()))
+
         #transform the sentence into a fractal
+
         self.lines = my_lsystem.create_fractal (sentence, int(self.angle_input_string.get()), int(self.random_input_string.get()), lenght = 10)
 
         #render the fractal
+
         self.drawing_canvas.delete('all')
         my_lsystem.render_fractal(self.drawing_canvas, self.lines, self.fractal_position, self.zoom_level)
+
 
     #Handles the zoom level
     def mouse_scroll_zoom(self, event):
 
         #updates the zoom level based on the mouse wheel movement
+
         self.zoom_level = self.zoom_level + (event.delta*0.02)
 
         #apply the new zoom level to the Canvas
+
         self.drawing_canvas.delete('all')
         my_lsystem.render_fractal(self.drawing_canvas, self.lines, self.fractal_position, self.zoom_level)
 
-    #Handles the mouse pan
 
+    #Handles the mouse pan
     def mouse_pan (self, event):
+
         #updates the fractal position based on the delta from the current mouse position. This delta is obtained in the function set_pan_delta()
+
         self.fractal_position = [event.x - self.delta_pan[0], event.y - self.delta_pan[1]]
 
         #apply the new zoom level to the Canvas
+
         self.drawing_canvas.delete('all')
         my_lsystem.render_fractal(self.drawing_canvas, self.lines, self.fractal_position, self.zoom_level)
 
+
     def set_pan_delta(self, event):
+
         #Get the current offset from to mouse to the fractal position
+
         self.delta_pan[0], self.delta_pan[1] = event.x-self.fractal_position[0], event.y-self.fractal_position[1]
+
         #print(self.delta_pan)
+
+    #Handles the rotation
+    def mouse_rotation (self, event):
+
+        global_fractal_origin = [self.fractal_position[0] + (my_lsystem.get_fractal_center(self.lines)[0]*self.zoom_level),
+                                 self.fractal_position[1] + (my_lsystem.get_fractal_center(self.lines)[1]*self.zoom_level)]
+
+
+        new_cursor_angle = my_lsystem.get_angle(global_fractal_origin, [event.x, event.y])
+        rotation_angle = self.last_cursor_angle - new_cursor_angle
+
+        self.lines = my_lsystem.rotate_fractal(self.lines, -rotation_angle)
+        self.drawing_canvas.delete('all')
+        my_lsystem.render_fractal(self.drawing_canvas, self.lines, self.fractal_position, self.zoom_level)
+        self.drawing_canvas.create_circle(*global_fractal_origin, 5)
+        self.last_cursor_angle = new_cursor_angle
+
+
+    def set_cursor_angle (self, event):
+        global_fractal_origin = [self.fractal_position[0] + (my_lsystem.get_fractal_center(self.lines)[0]*self.zoom_level),
+                                 self.fractal_position[1] + (my_lsystem.get_fractal_center(self.lines)[1]*self.zoom_level)]
+        self.last_cursor_angle = my_lsystem.get_angle (global_fractal_origin,[event.x, event.y])
 
 
 
