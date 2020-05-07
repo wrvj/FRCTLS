@@ -7,7 +7,7 @@ def export_svg(fractal, name, path = ''):
 
 
     #find the fractal boundaries
-    boundary = get_boundary(fractal)
+    boundary = my_lsystem.get_boundary(fractal)
 
     #first, create the String
     svg_lines = ''
@@ -30,20 +30,3 @@ def export_svg(fractal, name, path = ''):
         path = '{}/{}'.format(os.getcwd(), path)
         with open(f'{path}/{name}.svg', 'w') as f:
             f.write(svg_file)
-
-def get_boundary(fractal):
-
-    boundary = [fractal[0][0][0], fractal[0][0][1], fractal[0][0][0], fractal[0][0][1]]
-
-    for l in fractal:
-        for p in l:
-            if p[0]<boundary[0]:
-                boundary[0] = p[0]
-            if p[0]>boundary[2]:
-                boundary[2] = p[0]
-            if p[1]<boundary[1]:
-                boundary[1] = p[1]
-            if p[1]>boundary[3]:
-                boundary[3] = p[1]
-
-    return boundary

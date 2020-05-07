@@ -16,6 +16,7 @@ import time
 from operator import add
 
 
+
 def create_sentence(current, rules, iterations):
 
     #this recursive function creates the sentence based on the axiom and the rules given
@@ -50,29 +51,41 @@ def create_fractal (sentence, angle_offset = 0, randomness = 0, invert_y = -1, l
     before_time = time.time()
     vertices = [0.0,0.0]
 
-    line_lenght = lenght
+    fractal_state = {'pos' : current_position, 'angle' : angle, 'lenght' : lenght}
+    state_buffer = [fractal_state]
+
 
     def add_line():
-        nonlocal line_lenght
-        nonlocal current_position
+        nonlocal fractal_state
+
+        line_lenght = fractal_state['lenght']
+        current_position = fractal_state['pos']
+        angle = fractal_state['angle']
+
+
         lines.append([[current_position[0], invert_y*current_position[1]], [current_position[0]+line_lenght*np.sin(angle), invert_y*(current_position[1]+line_lenght*np.cos(angle))]])
         vertices.append(current_position[0]+line_lenght*np.sin(angle))
         vertices.append(invert_y*(current_position[1]+line_lenght*np.cos(angle)))
-        current_position = [current_position[0]+line_lenght*np.sin(angle), current_position[1]+line_lenght*np.cos(angle)]
+        fractal_state['pos'] = [current_position[0]+line_lenght*np.sin(angle), current_position[1]+line_lenght*np.cos(angle)]
         #print (lines)
 
     def rot_right():
-        nonlocal angle
-        angle += angle_offset
+        nonlocal fractal_state
+        print (np.radians(uniform(-randomness, randomness)))
+        fractal_state['angle'] += angle_offset + np.radians(uniform(-randomness, randomness))
 
     def rot_left():
-        nonlocal angle
-        angle -= angle_offset
+        nonlocal fractal_state
+        print (np.radians(uniform(-randomness, randomness)))
+        fractal_state['angle'] -= angle_offset + np.radians(uniform(-randomness, randomness))
+
 
     def save_state():
-        print ('saving current state')
+        nonlocal fractal_state
+        state_buffer.append(copy.deepcopy(fractal_state))
     def restore_state():
-        print ('restoring current state')
+        nonlocal fractal_state
+        fractal_state = copy.deepcopy(state_buffer.pop())
 
 
     turtle_commands = {'F': add_line, '+': rot_right, '-': rot_left, '[': save_state, ']': restore_state, 'A': add_line, 'B': add_line}
@@ -173,6 +186,23 @@ def get_fractal_center(fractal):
     center_of_mass = [center_of_mass[0]/(len(fractal)*2), center_of_mass[1]/(len(fractal)*2)]
 
     return center_of_mass
+
+def get_boundary(fractal):
+
+    boundary = [fractal[0][0][0], fractal[0][0][1], fractal[0][0][0], fractal[0][0][1]]
+
+    for l in fractal:
+        for p in l:
+            if p[0]<boundary[0]:
+                boundary[0] = p[0]
+            if p[0]>boundary[2]:
+                boundary[2] = p[0]
+            if p[1]<boundary[1]:
+                boundary[1] = p[1]
+            if p[1]>boundary[3]:
+                boundary[3] = p[1]
+
+    return boundary
 
 def create_circle(self, x, y, r):
     return self.create_oval(x-r, y-r, x+r, y+r)

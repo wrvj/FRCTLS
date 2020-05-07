@@ -1,9 +1,14 @@
+import tkinter
 from tkinter import *
 from tkinter import font as tkFont
 import copy
 from random import uniform
 import my_lsystem
 from operator import add
+from tkinter import ALL, EventType
+import svg_export as svg
+import time
+from PIL import ImageTk, Image
 
 
 class Frctls:
@@ -17,6 +22,9 @@ class Frctls:
         self.master = master
         self.master.config(bg = 'white')
 
+        #Load assets
+        self.creating_fractal_img = ImageTk.PhotoImage(Image.open("resources/creating_fractal_image.png"))
+
 
         #create and set the configuration variables, as colours, fonts, etc.
 
@@ -26,10 +34,11 @@ class Frctls:
         #creates the variables to handle the user user inputs
         self.axiom_input_string = StringVar(value ='F+F+F+F')
         self.rules_input_string = "FF"
-        self.angle_input_string = StringVar(value = '90')
+        self.angle_input_string = StringVar(value = '30')
         self.random_input_string = StringVar(value = '0')
         self.iterations_input_string = StringVar(value ='1')
         self.lines = []
+        self.redraw_fractal = False
 
 
         #easyly accessable style variables
@@ -65,6 +74,7 @@ class Frctls:
         self.drawing_canvas.bind('<B3-Motion>', self.mouse_rotation)
         self.drawing_canvas.bind('<Button-3>', self.set_cursor_angle)
         Canvas.create_circle = my_lsystem.create_circle
+
 
         #Creates the settings frame
         self.settings_frame = Frame(self.main_frame, bg = self.settings_frame_bg_color)
@@ -144,9 +154,18 @@ class Frctls:
         self.load_fractal_button = Button(self.settings_buttons_frame, text = 'Load Design', bg = 'white', borderwidth = 0.0, font = self.helv16)
         self.load_fractal_button.grid(row = 4, column = 0, sticky = EW)
 
+        #vertical spacing
+        self.settings_buttons_frame.grid_rowconfigure(5, minsize = 5)
 
-    #Handles the UPDATE Fractal button pressed
+        self.export_fractal_button = Button(self.settings_buttons_frame, text = 'Export Design', command = self.export_fractal, bg = 'white', borderwidth = 0.0, font = self.helv16)
+        self.export_fractal_button.grid(row = 6, column = 0, sticky = EW)
+
+
+
+
+
     def update_fractal(self):
+
 
         #create the sentence based on the iterations, rules and axiom given by the user
 
@@ -154,45 +173,74 @@ class Frctls:
 
         #transform the sentence into a fractal
 
-        self.lines = my_lsystem.create_fractal (sentence, int(self.angle_input_string.get()), int(self.random_input_string.get()), lenght = 10)
+        self.lines = my_lsystem.create_fractal (sentence, int(self.angle_input_string.get()), randomness = int(self.random_input_string.get()), lenght = 10)
+
+        #adjusts the zoom level based on the size of the fractal
+        bounds = my_lsystem.get_boundary(self.lines)
+        print (self.lines)
+        self.zoom_level = 1/((bounds[2] - bounds[0])/self.drawing_canvas.winfo_width())
+
+        if 1/((bounds[3] - bounds[1])/self.drawing_canvas.winfo_height()) < self.zoom_level:
+            self.zoom_level = 1/((bounds[3] - bounds[1])/self.drawing_canvas.winfo_height())
+
+        #apply a margin to the zoom level
+        self.zoom_level = 0.8 * self.zoom_level
+        #adjusts the fractal position prior to drawing
+        self.fractal_position = [0.1 * self.drawing_canvas.winfo_width(),
+                                 0.9 * self.drawing_canvas.winfo_height()]
+        self.fractal_position[0] += self.fractal_position[0] - ((bounds[0] * self.zoom_level)+(0.1 * self.drawing_canvas.winfo_width()))
+        self.fractal_position[1] += ((-1 * (bounds[1] * (self.zoom_level))) + (0.1 * self.drawing_canvas.winfo_height())) - self.fractal_position[1]
+
+        # #debub drawings
+        # print (bounds)
+        # self.drawing_canvas.create_circle(*self.fractal_position, 5)
+        # self.drawing_canvas.create_circle((bounds[0] * self.zoom_level)+(0.1 * self.drawing_canvas.winfo_width()), ((-1 * (bounds[1] * (self.zoom_level))) + (0.1 * self.drawing_canvas.winfo_height())) - self.fractal_position[1], 10)
 
         #render the fractal
-
         self.drawing_canvas.delete('all')
         my_lsystem.render_fractal(self.drawing_canvas, self.lines, self.fractal_position, self.zoom_level)
 
-
+    #Export Fractal as svg
+    def export_fractal(self):
+        svg.export_svg(self.lines, 'Teste')
     #Handles the zoom level
     def mouse_scroll_zoom(self, event):
 
+        ammount = 1+(0.0005*event.delta)
+
+        self.drawing_canvas.scale('all', event.x, event.y, ammount, ammount)
         #updates the zoom level based on the mouse wheel movement
 
-        self.zoom_level = self.zoom_level + (event.delta*0.02)
-
-        #apply the new zoom level to the Canvas
-
-        self.drawing_canvas.delete('all')
-        my_lsystem.render_fractal(self.drawing_canvas, self.lines, self.fractal_position, self.zoom_level)
+        # self.zoom_level = self.zoom_level + (event.delta*0.02)
+        #
+        # self.zoom_level = 1.0
+        # #apply the new zoom level to the Canvas
+        #
+        # self.drawing_canvas.delete('all')
+        # self.drawing_canvas.scale(ALL, event.x, event.y, 1.001 * event.delta, 1.001 * event.delta)
+        # my_lsystem.render_fractal(self.drawing_canvas, self.lines, self.fractal_position, self.zoom_level)
 
 
     #Handles the mouse pan
     def mouse_pan (self, event):
 
         #updates the fractal position based on the delta from the current mouse position. This delta is obtained in the function set_pan_delta()
-
-        self.fractal_position = [event.x - self.delta_pan[0], event.y - self.delta_pan[1]]
-
-        #apply the new zoom level to the Canvas
-
-        self.drawing_canvas.delete('all')
-        my_lsystem.render_fractal(self.drawing_canvas, self.lines, self.fractal_position, self.zoom_level)
+        #print (event)
+        self.drawing_canvas.move('all', event.x - self.delta_pan[0], event.y - self.delta_pan[1])
+        self.delta_pan[0], self.delta_pan[1] = event.x, event.y
+        # self.fractal_position = [event.x - self.delta_pan[0], event.y - self.delta_pan[1]]
+        #
+        # #apply the new zoom level to the Canvas
+        #
+        # self.drawing_canvas.delete('all')
+        # my_lsystem.render_fractal(self.drawing_canvas, self.lines, self.fractal_position, self.zoom_level)
 
 
     def set_pan_delta(self, event):
 
         #Get the current offset from to mouse to the fractal position
 
-        self.delta_pan[0], self.delta_pan[1] = event.x-self.fractal_position[0], event.y-self.fractal_position[1]
+        self.delta_pan[0], self.delta_pan[1] = event.x, event.y
 
         #print(self.delta_pan)
 
@@ -217,6 +265,15 @@ class Frctls:
         global_fractal_origin = [self.fractal_position[0] + (my_lsystem.get_fractal_center(self.lines)[0]*self.zoom_level),
                                  self.fractal_position[1] + (my_lsystem.get_fractal_center(self.lines)[1]*self.zoom_level)]
         self.last_cursor_angle = my_lsystem.get_angle (global_fractal_origin,[event.x, event.y])
+
+
+    #handling the exporting popup window
+    def popupmsg(self):
+        popup = Tk()
+        popup.wm_title("!")
+        B1 = Button(popup, text="Okay", command = popup.destroy)
+        B1.pack()
+        popup.mainloop()
 
 
 
