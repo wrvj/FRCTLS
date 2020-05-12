@@ -7,6 +7,7 @@ import my_lsystem
 from operator import add
 from tkinter import ALL, EventType
 import svg_export as svg
+from svg_export import FractalDesign
 import time
 from PIL import ImageTk, Image
 
@@ -39,6 +40,13 @@ class Frctls:
         self.iterations_input_string = StringVar(value ='1')
         self.lines = []
         self.redraw_fractal = False
+
+
+
+        #gets a list of saved fractals (objects of the type FractalDesign)to let the user load old designs
+        self.fractal_designs, self.fractal_names = svg.load_fractals('fractal_designs.frctl')
+        self.dropdown_holder = StringVar(value = self.fractal_names[0])
+
 
 
         #easyly accessable style variables
@@ -125,11 +133,11 @@ class Frctls:
         self.iterations_input = Entry(self.user_inputs_frame, textvariable = self.iterations_input_string, bg = self.user_input_bg_color, fg = 'white', font = self.helv16)
         self.iterations_input.grid(row = 6, column = 1, sticky = E)
 
-        #adds the auto-update checkbox input inside the user input frame (use .get() to get the state)
-        self.autoupdate_input_label = Label (self.user_inputs_frame, text = 'Auto Update:',bg = self.settings_frame_bg_color, fg = 'white', font = self.helv16)
-        self.autoupdate_input_label.grid(row = 7, column = 0, sticky = EW)
-        self.autoupdate_input = Checkbutton(self.user_inputs_frame, bg = self.settings_frame_bg_color)
-        self.autoupdate_input.grid(row = 7, column = 1, sticky = W)
+        #adds the dropdown menu for the user to load a fractal design
+        self.load_fractal_dropdown = OptionMenu (self.user_inputs_frame, self.dropdown_holder, *self.fractal_names, command = self.open_design)
+        self.load_fractal_dropdown.config(bg = self.settings_frame_bg_color, fg = 'white', font = self.helv16)
+        self.load_fractal_dropdown.grid(row = 7, column = 0, columnspan = 2, sticky = EW)
+
 
         #adds the action buttons (Execute fractal, save design, load design)
 
@@ -145,27 +153,18 @@ class Frctls:
         #vertical spacing
         self.settings_buttons_frame.grid_rowconfigure(1, minsize = 7)
 
-        self.save_fractal_button = Button(self.settings_buttons_frame, text = 'Save Design', bg = 'white', borderwidth = 0.0, font = self.helv16)
+        self.save_fractal_button = Button(self.settings_buttons_frame, text = 'Save Design', command = self.save_design, bg = 'white', borderwidth = 0.0, font = self.helv16)
         self.save_fractal_button.grid(row = 2, column = 0, sticky = EW)
 
         #vertical spacing
         self.settings_buttons_frame.grid_rowconfigure(3, minsize = 5)
 
-        self.load_fractal_button = Button(self.settings_buttons_frame, text = 'Load Design', bg = 'white', borderwidth = 0.0, font = self.helv16)
-        self.load_fractal_button.grid(row = 4, column = 0, sticky = EW)
-
-        #vertical spacing
-        self.settings_buttons_frame.grid_rowconfigure(5, minsize = 5)
-
         self.export_fractal_button = Button(self.settings_buttons_frame, text = 'Export Design', command = self.export_fractal, bg = 'white', borderwidth = 0.0, font = self.helv16)
-        self.export_fractal_button.grid(row = 6, column = 0, sticky = EW)
-
-
+        self.export_fractal_button.grid(row = 4, column = 0, sticky = EW)
 
 
 
     def update_fractal(self):
-
 
         #create the sentence based on the iterations, rules and axiom given by the user
 
@@ -203,6 +202,37 @@ class Frctls:
     #Export Fractal as svg
     def export_fractal(self):
         svg.export_svg(self.lines, 'Teste')
+
+    #handling the exporting popup window
+    def save_design(self):
+        args = [self.axiom_input.get(), self.rules_input.get("1.0",'end-1c'), self.angle_input.get(), self.randomness_input.get()]
+
+        def save(frctl_name, axiom, rules, angle, randomness):
+
+            new_frac = FractalDesign(frctl_name, 'none', axiom, rules, angle, randomness)
+            new_frac.save_design('fractal_designs.frctl')
+            popup.destroy()
+
+        popup = Tk()
+        popup.wm_title("Save design")
+        self.name_string = StringVar(value = 'Name')
+        name_input = Entry(popup, textvariable = self.name_string, bg = self.user_input_bg_color, fg = 'white', font = self.helv16)
+        name_input.pack()
+        B1 = Button(popup, text="Save", command = lambda: save(name_input.get(), *args))
+        B1.pack()
+        popup.mainloop()
+
+    def open_design(self, event):
+
+        self.axiom_input_string.set(self.fractal_designs[event].get_data()[2])
+        self.rules_input_string = self.fractal_designs[event].get_data()[3]
+        self.angle_input_string.set(self.fractal_designs[event].get_data()[4])
+        self.random_input_string.set(self.fractal_designs[event].get_data()[5])
+
+
+
+
+
     #Handles the zoom level
     def mouse_scroll_zoom(self, event):
 
@@ -267,13 +297,7 @@ class Frctls:
         self.last_cursor_angle = my_lsystem.get_angle (global_fractal_origin,[event.x, event.y])
 
 
-    #handling the exporting popup window
-    def popupmsg(self):
-        popup = Tk()
-        popup.wm_title("!")
-        B1 = Button(popup, text="Okay", command = popup.destroy)
-        B1.pack()
-        popup.mainloop()
+
 
 
 

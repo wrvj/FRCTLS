@@ -1,7 +1,54 @@
 import os
 import my_lsystem
 import numpy as np
+import pickle
 
+
+class FractalDesign:
+
+    def __init__(self, name, description, axiom, rules, angle, random):
+
+        self.name, self.description, self.axiom, self.rules, self.angle, self.random = name, description, axiom, rules, angle, random
+
+    def __repr__(self):
+        return "Name: {}\nDescription: {}\nAxiom: {}\nRules: {}\nAngle: {}\nRandom: {}".format(self.name, self.description, self.axiom, self.rules, self.angle, self.random)
+
+    def save_design(self, filename):
+
+        fractal = self
+        temp_dict = dict()
+
+        try:
+            with open(filename, 'rb') as f:
+                temp_dict = pickle.load(f)
+                temp_dict.update({fractal.name : fractal})
+                pickle.dump(temp_dict, f)
+        except:
+            with open(filename, 'wb') as f:
+                temp_dict.update({fractal.name : fractal})
+                pickle.dump(temp_dict, f)
+
+
+    def get_data(self):
+        return (self.name, self.description, self.axiom, self.rules, self.angle, self.random)
+
+def load_fractals(filename):
+    name_list = []
+    temp_dict = dict()
+    try:
+        with open(filename, 'rb') as f:
+            temp_dict = pickle.load(f)
+
+            #try to return a dictionary of fractals to the user
+
+            for d in list(temp_dict):
+                print (d)
+                #name_list.append(d['name'])
+
+            return (temp_dict, list(temp_dict))
+    except:
+        print ('no fractals found at {}'.format(filename))
+        return (None, list(['No saved fractal found.']))
 
 def export_svg(fractal, name, path = ''):
 
